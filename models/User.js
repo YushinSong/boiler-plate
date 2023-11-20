@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const saltRounds = 10; // salt가 몇글자인가
+const jwt = require('jsonwebtoken');
 
 const userSchema = mongoose.Schema({
     name: {
@@ -46,8 +47,38 @@ userSchema.pre('save', function(next){
                 next()//git test
             })
         })
+    } 
+    else{ // 비밀번호가 아니라 다른 걸 바꾸었을 때
+        next()
     }
 })
+
+userSchema.methods.comparePassword = function(plainPassword, cb){
+    // plainPassword(1234567)와 암호화된 비밀번호가 일치하는지 체크하기 위해서는, 
+    // plainPassword도 암호화한 후, 일치하는지 체크하면 된다.
+    bcrypt.compare(plainPassword, this.password, function(err, isMatch){
+        if(err) return cb(err);
+        cb(null, isMatch)
+    })
+}
+
+userSchema.methods.generateToken = function(cb){
+    var user = this;
+
+    //jsonwebtoken을 이용해서 토큰을 생성하기
+    var token = jwt.sign(user._id.toHexString(), 'secertToken');
+    //user._id + 'secertToken' = token
+    user.token = token;
+    //user.save(function(err, user){
+    //    if(err) return cb(err);
+    //    cb(null, user)
+    //})
+    user.save().then(() => {
+        return cb(null, user)
+    }).catch((err)=>{
+        return cb(err)
+    })
+}
 
 const User = mongoose.model('User', userSchema) // 스키마를 모델로 감싸기
 

@@ -43,7 +43,7 @@ userSchema.pre('save', function(next){
             bcrypt.hash(user.password, salt, function(err, hash){ // userSchema의 password가져오기
                 if(err) return next(err);
                 user.password = hash;
-                next()
+                next()//git test
             })
         })
     }
